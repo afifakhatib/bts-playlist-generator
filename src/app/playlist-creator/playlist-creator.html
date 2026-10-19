@@ -1,0 +1,394 @@
+<div class="creator-page">
+  <header class="creator-header">
+    <p class="eyebrow">BTS STREAMING BEATS</p>
+    <h1>Create Your Playlist</h1>
+    <p>Build your listening flow. Keep your focus on the music.</p>
+  </header>
+
+  <section class="creator-card">
+    <button
+      type="button"
+      class="spotify-btn"
+      (click)="connectSpotify()"
+      [disabled]="spotifyConnected"
+    >
+      @if (spotifyConnected) {
+        <span class="spotify-icon">✓</span>
+        Spotify Connected
+      } @else {
+        <span class="spotify-icon">♫</span>
+        Connect Spotify
+      }
+    </button>
+
+    @if (!spotifyConnected) {
+      <p>Connect Spotify first to search its catalogue.</p>
+    }
+
+    @if (hasAttemptedGeneration && validationErrors.length > 0) {
+      <section class="validation-panel validation-top">
+        <h3>⚠️ Please fix these issues</h3>
+        <ul>
+          @for (error of validationErrors; track error) {
+            <li>{{ error }}</li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (hasAttemptedGeneration && validationWarnings.length > 0) {
+      <section class="validation-panel validation-top">
+        <h3>💜 Suggestions</h3>
+        <ul>
+          @for (warning of validationWarnings; track warning) {
+            <li>{{ warning }}</li>
+          }
+        </ul>
+      </section>
+    }
+
+    <section class="focus-section">
+      <h2>Focus Tracks</h2>
+      <p>Search Spotify, choose your target songs, and set the number of plays.</p>
+
+      <div class="focus-track-card">
+        <label for="spotifyTrackQuery">Search for a focus track</label>
+
+        <div class="spotify-search-row">
+          <input
+            id="spotifyTrackQuery"
+            type="text"
+            placeholder="Search SWIM, Haegeum, Wild Flower..."
+            [(ngModel)]="spotifyTrackQuery"
+            (keyup.enter)="searchSpotifyTracks()"
+          />
+
+          <button
+            type="button"
+            class="spotify-btn"
+            (click)="searchSpotifyTracks()"
+            [disabled]="trackSearchLoading || !spotifyConnected"
+          >
+            {{ trackSearchLoading ? 'Searching...' : 'Search tracks' }}
+          </button>
+        </div>
+
+        @if (spotifyTracks.length > 0) {
+          <ul class="spotify-results">
+            @for (track of spotifyTracks; track track.id) {
+              <li>
+                <div class="spotify-result-info">
+                  <strong>{{ track.name }}</strong>
+                  <span> {{ formatArtists(track.artists) }} · {{ track.album.name }} </span>
+                </div>
+
+                <div class="spotify-result-actions">
+                  <button type="button" (click)="chooseSpotifyTrack(track, 1)">
+                    Set as Focus 1
+                  </button>
+                  <button type="button" (click)="chooseSpotifyTrack(track, 2)">
+                    Set as Focus 2
+                  </button>
+                  <a [href]="track.external_urls.spotify" target="_blank" rel="noopener noreferrer"
+                    >Open</a
+                  >
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="track-selection">
+        <label for="focusSong1">Focus Track 1</label>
+        <div class="track-input-row">
+          <input
+            id="focusSong1"
+            type="text"
+            [value]="focusSong1"
+            placeholder="No track selected"
+            readonly
+          />
+
+          <div class="track-count">
+            <input
+              [(ngModel)]="focusCount1"
+              id="focusCount1"
+              type="number"
+              min="1"
+              max="12"
+              aria-label="Number of plays for Focus Track 1"
+            />
+            <span>plays</span>
+          </div>
+        </div>
+
+        <label for="focusSong2">Focus Track 2 (optional)</label>
+        <div class="track-input-row">
+          <input
+            id="focusSong2"
+            type="text"
+            [value]="focusSong2"
+            placeholder="No second track selected"
+            readonly
+          />
+
+          <div class="track-count">
+            <input
+              [(ngModel)]="focusCount2"
+              id="focusCount2"
+              type="number"
+              min="1"
+              max="10"
+              aria-label="Number of plays for Focus Track 2"
+            />
+            <span>plays</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <section class="album-section">
+      <h2>Album Selection</h2>
+      <p>Search for an album to include all its available tracks.</p>
+
+      <label for="spotifyAlbumQuery">Search for an album</label>
+      <div class="spotify-search-row">
+        <input
+          id="spotifyAlbumQuery"
+          type="text"
+          placeholder="Search ARIRANG or another album..."
+          [(ngModel)]="spotifyAlbumQuery"
+          (keyup.enter)="searchSpotifyAlbums()"
+        />
+
+        <button
+          type="button"
+          class="spotify-btn"
+          (click)="searchSpotifyAlbums()"
+          [disabled]="albumSearchLoading || !spotifyConnected"
+        >
+          {{ albumSearchLoading ? 'Searching...' : 'Search albums' }}
+        </button>
+      </div>
+
+      @if (spotifyAlbums.length > 0) {
+        <ul class="spotify-results">
+          @for (album of spotifyAlbums; track album.id) {
+            <li>
+              <div class="spotify-result-info">
+                <strong>{{ album.name }}</strong>
+                <span> {{ formatArtists(album.artists) }} · {{ album.total_tracks }} tracks </span>
+              </div>
+
+              <div class="spotify-result-actions">
+                <button type="button" (click)="chooseSpotifyAlbum(album, 1)">Set as Album 1</button>
+                <button type="button" (click)="chooseSpotifyAlbum(album, 2)">Set as Album 2</button>
+                <a [href]="album.external_urls.spotify" target="_blank" rel="noopener noreferrer"
+                  >Open</a
+                >
+              </div>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="album-selection">
+        <label for="album1">Album 1</label>
+        <input id="album1" type="text" [value]="album1" placeholder="No album selected" readonly />
+
+        <label for="album2">Album 2 (optional)</label>
+        <input id="album2" type="text" [value]="album2 || 'None'" readonly />
+
+        <button type="button" (click)="selectAlbum2('')">None — skip Album 2</button>
+      </div>
+    </section>
+
+    @if (spotifySearchError) {
+      <p class="spotify-search-error">{{ spotifySearchError }}</p>
+    }
+
+    <button
+      type="button"
+      class="generate-btn"
+      (click)="generatePlaylist()"
+      [disabled]="isGenerating"
+    >
+      {{ isGenerating ? 'Generating playlist...' : 'Generate Playlist' }}
+    </button>
+
+    <!-- @if (generatedPlaylistSequence.length > 0) {
+      <section class="rules-card generated-preview">
+        <h2>Playlist Preview</h2>
+
+        <ol>
+          @for (track of generatedPlaylistSequence; track $index) {
+            <li>{{ track }}</li>
+          }
+        </ol>
+
+        <p>Total tracks: {{ generatedPlaylistSequence.length }}</p>
+
+        <div class="spotify-create-section">
+          <button
+            type="button"
+            class="spotify-btn create-playlist-btn"
+            (click)="createSpotifyPlaylist()"
+            [disabled]="isCreatingSpotifyPlaylist || !spotifyConnected"
+          >
+            {{
+              isCreatingSpotifyPlaylist
+                ? 'Creating Spotify playlist...'
+                : '♫ Create Real Spotify Playlist'
+            }}
+          </button>
+
+          @if (isCreatingSpotifyPlaylist) {
+            <p>Please wait while HEARTBEAT creates your playlist and adds its tracks.</p>
+          }
+
+          @if (spotifyPlaylistError) {
+            <p class="spotify-search-error">
+              {{ spotifyPlaylistError }}
+            </p>
+          }
+
+          @if (createdSpotifyPlaylist) {
+            <div class="spotify-success">
+              <h3>💜 Your Spotify playlist is ready!</h3>
+
+              <p>{{ createdSpotifyPlaylist.name }}</p>
+
+              <a
+                [href]="createdSpotifyPlaylist.external_urls.spotify"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open playlist on Spotify ↗
+              </a>
+            </div>
+          }
+        </div>
+      </section>
+    } -->
+
+    @if (generatedPlaylistSequence.length > 0) {
+      <details class="rules-card generated-preview preview-dropdown">
+        <summary>
+          <span>
+            <strong>Playlist Preview</strong>
+            <small>{{ generatedPlaylistSequence.length }} tracks generated</small>
+          </span>
+          <span class="preview-chevron">⌄</span>
+        </summary>
+
+        <!-- <summary>
+  <span class="preview-summary">
+    <strong>Playlist Preview</strong>
+    <small>{{ generatedPlaylistSequence.length }} tracks generated</small>
+
+    <span class="preview-selections">
+      @if (focusSong1) {
+        <span>Focus 1: {{ focusSong1 }}</span>
+      }
+
+      @if (focusSong2) {
+        <span>Focus 2: {{ focusSong2 }}</span>
+      }
+
+      @if (selectedAlbum1) {
+        <span>Album: {{ selectedAlbum1 }}</span>
+      }
+
+      @if (selectedAlbum2) {
+        <span>Album 2: {{ selectedAlbum2 }}</span>
+      }
+    </span>
+  </span>
+
+  <span class="preview-chevron">⌄</span>
+</summary> -->
+
+        <div class="preview-content">
+          <ol>
+            @for (track of generatedPlaylistSequence; track $index) {
+              <li>{{ track }}</li>
+            }
+          </ol>
+
+          <p>Total tracks: {{ generatedPlaylistSequence.length }}</p>
+        </div>
+      </details>
+    }
+
+    <section class="rules-card spotify-playlist-section">
+      <p class="eyebrow">YOUR PLAYLIST</p>
+      <h2>Spotify Playlist</h2>
+      <p>Create your generated playlist on Spotify and access its real link here.</p>
+
+      @if (generatedPlaylistSequence.length === 0) {
+        <p>Generate a playlist first to continue.</p>
+      } @else {
+        <button
+          type="button"
+          class="spotify-btn create-playlist-btn"
+          (click)="createSpotifyPlaylist()"
+          [disabled]="isCreatingSpotifyPlaylist || !spotifyConnected"
+        >
+          {{
+            isCreatingSpotifyPlaylist
+              ? 'Creating Spotify playlist...'
+              : '♫ Create Real Spotify Playlist'
+          }}
+        </button>
+      }
+
+      @if (isCreatingSpotifyPlaylist) {
+        <p>Please wait while HEARTBEAT creates your playlist and adds its tracks.</p>
+      }
+
+      @if (spotifyPlaylistError) {
+        <p class="spotify-search-error">{{ spotifyPlaylistError }}</p>
+      }
+
+      @if (createdSpotifyPlaylist) {
+        <div class="spotify-success">
+          <h3>💜 Your Spotify playlist is ready!</h3>
+          <p>{{ createdSpotifyPlaylist.name }}</p>
+
+          <a
+            [href]="createdSpotifyPlaylist.external_urls.spotify"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open playlist on Spotify ↗
+          </a>
+        </div>
+      }
+    </section>
+
+    <section class="rules-card">
+      <p class="eyebrow">HEARTBEAT CHECKLIST</p>
+      <h2>Playlist Rules</h2>
+      <p class="rules-intro">Your playlist must follow these rules before generation.</p>
+
+      <ul class="rules-list">
+        <li>Focus setup: 1–2 songs, with albums optional.</li>
+        <li>One focus song: maximum 12 plays.</li>
+        <li>Two focus songs: maximum 10 plays per song.</li>
+        <li>Supported combinations include 2 songs + 1 album and 1 song + 2 albums.</li>
+        <li>Exactly 2 opening and 2 closing buffer tracks.</li>
+        <li>Buffer tracks must be non-focus and non-charting.</li>
+        <li>Exactly 2 low-stream tracks per playlist.</li>
+        <li>Normally 3–4 BTS fillers; 5 only rarely.</li>
+        <li>Exception: 2 fillers only when both exceed 4 minutes and total 8–10 minutes.</li>
+        <li>Only 2–3 non-BTS/local tracks.</li>
+        <li>Repeated focus tracks should use different verified versions when available.</li>
+        <li>Automatic fillers should be unique across generations whenever possible.</li>
+        <li>Track order should follow the reference playlist pattern, with variation each time.</li>
+      </ul>
+    </section>
+  </section>
+</div>
