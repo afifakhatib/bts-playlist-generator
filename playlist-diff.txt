@@ -1,0 +1,857 @@
+diff --git a/src/app/playlist-creator/playlist-creator.ts b/src/app/playlist-creator/playlist-creator.ts
+index 946b544..8ee0fc5 100644
+--- a/src/app/playlist-creator/playlist-creator.ts
++++ b/src/app/playlist-creator/playlist-creator.ts
+@@ -265,13 +265,19 @@ export class PlaylistCreator implements OnInit {
+       errors.push('Use 3–4 fillers normally; 5 is the rare maximum.');
+     }
+ 
+-    if (this.fillerCount === 2) {
+-      const total = this.fillerDuration1 + this.fillerDuration2;
++    // if (this.fillerCount === 2) {
++    //   const total = this.fillerDuration1 + this.fillerDuration2;
+ 
+-      if (this.fillerDuration1 <= 4 || this.fillerDuration2 <= 4 || total < 8 || total > 10) {
+-        errors.push(
+-          'The 2-filler exception requires both tracks to exceed 4 minutes and total 8–10 minutes.',
+-        );
++    //   if (this.fillerDuration1 <= 4 || this.fillerDuration2 <= 4 || total < 8 || total > 10) {
++    //     errors.push(
++    //       'The 2-filler exception requires both tracks to exceed 4 minutes and total 8–10 minutes.',
++    //     );
++    //   }
++    // }
++
++    if (this.fillerCount === 2) {
++      if (this.fillerDuration1 < 4 || this.fillerDuration2 < 4) {
++        errors.push('When using 2 fillers, each track must be at least 4 minutes long.');
+       }
+     }
+ 
+@@ -286,500 +292,6 @@ export class PlaylistCreator implements OnInit {
+     return this.fillerCount === 5 ? ['Five fillers should be used only rarely.'] : [];
+   }
+ 
+-  // async generatePlaylist(): Promise<void> {
+-  //   console.log('[HEARTBEAT] Generate clicked');
+-  //   if (this.isGenerating) return;
+-
+-  //   this.hasAttemptedGeneration = true;
+-  //   this.spotifySearchError = '';
+-
+-  //   if (this.validationErrors.length > 0) return;
+-
+-  //   this.isGenerating = true;
+-
+-  //   try {
+-  //     // Build the requested focus-song play counts.
+-  //     const focusCounts = new Map<string, { name: string; remaining: number; total: number }>();
+-
+-  //     const addFocusSong = (name: string, count: number): void => {
+-  //       const cleanName = name.trim();
+-
+-  //       if (!cleanName || !Number.isInteger(count) || count <= 0) return;
+-
+-  //       const key = cleanName.toLowerCase();
+-  //       const existing = focusCounts.get(key);
+-
+-  //       if (existing) {
+-  //         existing.remaining += count;
+-  //         existing.total += count;
+-  //       } else {
+-  //         focusCounts.set(key, {
+-  //           name: cleanName,
+-  //           remaining: count,
+-  //           total: count,
+-  //         });
+-  //       }
+-  //     };
+-
+-  //     addFocusSong(this.focusSong1, Number(this.focusCount1));
+-  //     addFocusSong(this.focusSong2, Number(this.focusCount2));
+-
+-  //     const focusTotal = [...focusCounts.values()].reduce((sum, track) => sum + track.total, 0);
+-
+-  //     console.log('[HEARTBEAT] Loading album tracks...');
+-  //     // Load every track from the selected albums.
+-  //     const albumTracks: string[] = [];
+-  //     const selectedAlbumIds = new Set<string>();
+-
+-  //     const albumsToLoad = [
+-  //       { album: this.selectedSpotifyAlbum1, title: this.album1 },
+-  //       { album: this.selectedSpotifyAlbum2, title: this.album2 },
+-  //     ];
+-
+-  //     for (const selection of albumsToLoad) {
+-  //       const title = selection.title.trim();
+-  //       const album = selection.album;
+-
+-  //       if (!title) continue;
+-
+-  //       if (!album || album.name.trim().toLowerCase() !== title.toLowerCase()) {
+-  //         throw new Error(`Please select "${title}" again from the Spotify search results.`);
+-  //       }
+-
+-  //       if (selectedAlbumIds.has(album.id)) continue;
+-  //       selectedAlbumIds.add(album.id);
+-
+-  //       const tracks = await this.spotifyService.getAlbumTracks(album.id, album.name);
+-
+-  //       albumTracks.push(...tracks.map((track) => track.name));
+-  //     }
+-
+-  //     type PlaylistItem = {
+-  //       name: string;
+-  //       kind: 'focus' | 'album';
+-  //     };
+-
+-  //     const totalItems = focusTotal + albumTracks.length;
+-
+-  //     if (totalItems === 0) {
+-  //       throw new Error('Choose at least one focus song or album.');
+-  //     }
+-
+-  //     // Try several arrangements to distribute focus plays naturally.
+-  //     const candidates: { tracks: PlaylistItem[]; score: number }[] = [];
+-
+-  //     for (let attempt = 0; attempt < 80; attempt++) {
+-  //       const remaining = new Map(
+-  //         [...focusCounts.entries()].map(([key, value]) => [key, { ...value }]),
+-  //       );
+-
+-  //       const tracks: PlaylistItem[] = [];
+-  //       let albumIndex = 0;
+-  //       let focusAdded = 0;
+-  //       let focusRun = 0;
+-  //       let albumRun = 0;
+-  //       let previousFocus = '';
+-
+-  //       while (focusAdded < focusTotal || albumIndex < albumTracks.length) {
+-  //         const albumsLeft = albumTracks.length - albumIndex;
+-  //         const focusLeft = focusTotal - focusAdded;
+-  //         let chooseFocus = false;
+-
+-  //         if (albumsLeft === 0) {
+-  //           chooseFocus = true;
+-  //         } else if (focusLeft === 0) {
+-  //           chooseFocus = false;
+-  //         } else if (focusRun >= 2) {
+-  //           chooseFocus = false;
+-  //         } else if (albumRun >= 2) {
+-  //           chooseFocus = true;
+-  //         } else {
+-  //           const targetFocusSoFar = ((tracks.length + 1) * focusTotal) / totalItems;
+-  //           const deficit = targetFocusSoFar - focusAdded;
+-  //           const probability = Math.max(0.15, Math.min(0.85, 0.5 + deficit * 0.25));
+-
+-  //           chooseFocus = Math.random() < probability;
+-  //         }
+-
+-  //         if (chooseFocus) {
+-  //           let available = [...remaining.entries()].filter(([, track]) => track.remaining > 0);
+-
+-  //           if (available.length === 0) break;
+-
+-  //           const alternatives = available.filter(([key]) => key !== previousFocus);
+-
+-  //           if (alternatives.length > 0) available = alternatives;
+-
+-  //           const highestRemaining = Math.max(...available.map(([, track]) => track.remaining));
+-
+-  //           const tied = available.filter(([, track]) => track.remaining === highestRemaining);
+-
+-  //           const [key, selected] = tied[Math.floor(Math.random() * tied.length)];
+-
+-  //           tracks.push({ name: selected.name, kind: 'focus' });
+-  //           selected.remaining--;
+-  //           focusAdded++;
+-  //           focusRun++;
+-  //           albumRun = 0;
+-  //           previousFocus = key;
+-  //         } else {
+-  //           tracks.push({
+-  //             name: albumTracks[albumIndex],
+-  //             kind: 'album',
+-  //           });
+-
+-  //           albumIndex++;
+-  //           albumRun++;
+-  //           focusRun = 0;
+-  //           previousFocus = '';
+-  //         }
+-  //       }
+-
+-  //       let score = 0;
+-  //       const positions = new Map<string, number[]>();
+-
+-  //       tracks.forEach((track, index) => {
+-  //         if (track.kind !== 'focus') return;
+-
+-  //         const key = track.name.toLowerCase();
+-  //         const songPositions = positions.get(key) ?? [];
+-  //         songPositions.push(index);
+-  //         positions.set(key, songPositions);
+-
+-  //         const previous = tracks[index - 1];
+-  //         if (previous?.kind === 'focus' && previous.name.toLowerCase() === key) {
+-  //           score += 100;
+-  //         }
+-
+-  //         const previousTwo = tracks[index - 2];
+-  //         if (previousTwo?.kind === 'focus' && previousTwo.name.toLowerCase() === key) {
+-  //           score += 8;
+-  //         }
+-  //       });
+-
+-  //       for (const [key, songPositions] of positions) {
+-  //         const requestedCount = focusCounts.get(key)!.total;
+-  //         const idealGap = totalItems / requestedCount;
+-
+-  //         for (let i = 1; i < songPositions.length; i++) {
+-  //           const actualGap = songPositions[i] - songPositions[i - 1];
+-  //           score += Math.abs(actualGap - idealGap);
+-  //         }
+-  //       }
+-
+-  //       candidates.push({ tracks, score });
+-  //     }
+-
+-  //     candidates.sort((a, b) => a.score - b.score);
+-  //     const shortlist = candidates.slice(0, Math.min(5, candidates.length));
+-
+-  //     const chosen = shortlist[Math.floor(Math.random() * shortlist.length)];
+-
+-  //     if (!chosen) {
+-  //       throw new Error('Could not arrange the selected tracks. Try again.');
+-  //     }
+-
+-  //     const mainTracks = chosen.tracks.map((track) => track.name);
+-  //     const excludedNames = new Set<string>();
+-
+-  //     for (const name of [this.focusSong1, this.focusSong2, ...albumTracks]) {
+-  //       if (name.trim()) excludedNames.add(name.trim().toLowerCase());
+-  //     }
+-
+-  //     const fillerTotal = Number(this.fillerCount);
+-  //     console.log('[HEARTBEAT] Searching for supporting tracks...');
+-  //     const supportTracks = await this.loadSupportTracks(excludedNames, 4 + fillerTotal);
+-  //     console.log('[HEARTBEAT] Supporting tracks loaded');
+-
+-  //     const openingBuffers = supportTracks.slice(0, 2);
+-  //     const fillerTracks = supportTracks.slice(2, 2 + fillerTotal);
+-  //     const closingBuffers = supportTracks.slice(-2);
+-
+-  //     const tracksWithFillers: string[] = [];
+-  //     let nextFiller = 0;
+-
+-  //     for (let i = 0; i < mainTracks.length; i++) {
+-  //       tracksWithFillers.push(mainTracks[i]);
+-
+-  //       const targetPosition = Math.floor(
+-  //         ((nextFiller + 1) * mainTracks.length) / (fillerTracks.length + 1),
+-  //       );
+-
+-  //       if (nextFiller < fillerTracks.length && i + 1 >= targetPosition) {
+-  //         tracksWithFillers.push(fillerTracks[nextFiller].name);
+-  //         nextFiller++;
+-  //       }
+-  //     }
+-
+-  //     while (nextFiller < fillerTracks.length) {
+-  //       tracksWithFillers.push(fillerTracks[nextFiller].name);
+-  //       nextFiller++;
+-  //     }
+-
+-  //     // Keep the generated preview, then clear the configuration.
+-  //     this.generatedPlaylistSequence = [
+-  //       ...openingBuffers.map((track) => track.name),
+-  //       ...tracksWithFillers,
+-  //       ...closingBuffers.map((track) => track.name),
+-  //     ];
+-
+-  //     this.resetConfiguration();
+-  //   } catch (error) {
+-  //     this.spotifySearchError =
+-  //       error instanceof Error
+-  //         ? error.message
+-  //         : 'Something went wrong while generating your playlist.';
+-  //   } finally {
+-  //     console.log('[HEARTBEAT] Finally block reached');
+-
+-  //     this.isGenerating = false;
+-
+-  //     console.log('[HEARTBEAT] isGenerating:', this.isGenerating);
+-
+-  //     this.cdr.markForCheck();
+-  //   }
+-  // }
+-
+-  //   async generatePlaylist(): Promise<void> {
+-  //     if (this.isGenerating) return;
+-
+-  //     this.hasAttemptedGeneration = true;
+-  //     this.spotifySearchError = '';
+-
+-  //     if (this.validationErrors.length > 0) return;
+-
+-  //     this.isGenerating = true;
+-  //     this.cdr.markForCheck();
+-
+-  //     try {
+-  //       // 1. Build the exact requested focus-song sequence.
+-  //       const focusPool: string[] = [];
+-
+-  //       const addFocus = (name: string, count: number): void => {
+-  //         const cleanName = name.trim();
+-
+-  //         for (let i = 0; i < count; i++) {
+-  //           if (cleanName) focusPool.push(cleanName);
+-  //         }
+-  //       };
+-
+-  //       addFocus(this.focusSong1, Number(this.focusCount1));
+-  //       addFocus(this.focusSong2, Number(this.focusCount2));
+-
+-  //       if (focusPool.length === 0) {
+-  //         throw new Error('Choose at least one focus song.');
+-  //       }
+-
+-  //       // Shuffle while avoiding the same focus song twice consecutively.
+-  //       const focusSequence: string[] = [];
+-  //       const remaining = new Map<string, number>();
+-
+-  //       for (const name of focusPool) {
+-  //         const key = this.normalizeTrackName(name);
+-  //         remaining.set(key, (remaining.get(key) ?? 0) + 1);
+-  //       }
+-
+-  //       while ([...remaining.values()].some((count) => count > 0)) {
+-  //         const previous = focusSequence.length
+-  //           ? this.normalizeTrackName(focusSequence[focusSequence.length - 1])
+-  //           : '';
+-
+-  //         let available = [...remaining.entries()].filter(([, count]) => count > 0);
+-
+-  //         const alternatives = available.filter(([key]) => key !== previous);
+-
+-  //         if (alternatives.length > 0) {
+-  //           available = alternatives;
+-  //         }
+-
+-  //         const totalRemaining = available.reduce((sum, [, count]) => sum + count, 0);
+-
+-  //         let pick = Math.floor(Math.random() * totalRemaining);
+-
+-  //         for (const [key, count] of available) {
+-  //           pick -= count;
+-
+-  //           if (pick < 0) {
+-  //             focusSequence.push(
+-  //               key === this.normalizeTrackName(this.focusSong1)
+-  //                 ? this.focusSong1.trim()
+-  //                 : key === this.normalizeTrackName(this.focusSong2)
+-  //                   ? this.focusSong2.trim()
+-  //                   : key,
+-  //             );
+-
+-  //             remaining.set(key, count - 1);
+-  //             break;
+-  //           }
+-  //         }
+-  //       }
+-
+-  //       // 2. Load the actual tracks from selected Spotify albums.
+-  //       const albumTracks: SpotifyTrack[] = [];
+-  //       const seenAlbumTrackIds = new Set<string>();
+-  //       const selectedAlbumIds = new Set<string>();
+-
+-  //       const albumSelections = [
+-  //         { title: this.album1, album: this.selectedSpotifyAlbum1 },
+-  //         { title: this.album2, album: this.selectedSpotifyAlbum2 },
+-  //       ];
+-
+-  //       for (const selection of albumSelections) {
+-  //         const title = selection.title.trim();
+-  //         if (!title) continue;
+-
+-  //         const album = selection.album;
+-
+-  //         if (!album || album.name.trim().toLowerCase() !== title.toLowerCase()) {
+-  //           throw new Error(`Please select "${title}" again from the Spotify search results.`);
+-  //         }
+-
+-  //         if (selectedAlbumIds.has(album.id)) continue;
+-  //         selectedAlbumIds.add(album.id);
+-
+-  //         const tracks = await this.spotifyService.getAlbumTracks(album.id, album.name);
+-
+-  //         for (const track of tracks) {
+-  //           const key = this.normalizeTrackName(track.name);
+-  //           const isFocusTrack = focusPool.some((name) => this.normalizeTrackName(name) === key);
+-
+-  //           if (isFocusTrack || seenAlbumTrackIds.has(track.id)) continue;
+-
+-  //           seenAlbumTrackIds.add(track.id);
+-  //           albumTracks.push(track);
+-  //         }
+-  //       }
+-
+-  //       // 3. Create a variable-length gap after each focus placement.
+-  //       const gapCount = Math.max(0, focusSequence.length - 1);
+-  //       const albumGaps: SpotifyTrack[][] = Array.from({ length: gapCount }, () => []);
+-
+-  //       // Distribute album tracks across gaps instead of grouping them together.
+-  //       const shuffledAlbums = [...albumTracks];
+-
+-  //       for (let i = shuffledAlbums.length - 1; i > 0; i--) {
+-  //         const j = Math.floor(Math.random() * (i + 1));
+-  //         [shuffledAlbums[i], shuffledAlbums[j]] = [shuffledAlbums[j], shuffledAlbums[i]];
+-  //       }
+-
+-  //       shuffledAlbums.forEach((track, index) => {
+-  //         if (gapCount > 0) {
+-  //           // Spread album tracks across the available gaps.
+-  //           const gapIndex = index % gapCount;
+-  //           albumGaps[gapIndex].push(track);
+-  //         }
+-  //       });
+-
+-  //       // Usually target 3–4 supporting tracks per gap.
+-  //       // Occasionally use 5. Album tracks count toward the gap size.
+-  //       const gapTargets = Array.from({ length: gapCount }, () => {
+-  //         const roll = Math.random();
+-
+-  //         if (roll < 0.05) return 5;
+-  //         return roll < 0.55 ? 3 : 4;
+-  //       });
+-
+-  //       const extraFillersNeeded = albumGaps.reduce(
+-  //         (total, tracks, index) => total + Math.max(0, gapTargets[index] - tracks.length),
+-  //         0,
+-  //       );
+-
+-  //       // Four separate buffer tracks, plus the additional gap fillers.
+-  //       const requiredSupportCount = 4 + extraFillersNeeded;
+-
+-  //       const excludedNames = new Set<string>();
+-
+-  //       for (const name of focusPool) {
+-  //         excludedNames.add(this.normalizeTrackName(name));
+-  //       }
+-
+-  //       for (const track of albumTracks) {
+-  //         excludedNames.add(this.normalizeTrackName(track.name));
+-  //       }
+-
+-  //       console.log('[HEARTBEAT] Loading BTS fillers and buffers...');
+-
+-  //       const supportTracks = await this.loadSupportTracks(excludedNames, requiredSupportCount);
+-
+-  //       // 4. Keep buffers separate from all gap fillers.
+-  //       // const openingBuffers = supportTracks.slice(0, 2);
+-  //       // const gapFillers = supportTracks.slice(2, 2 + extraFillersNeeded);
+-  //       // const closingBuffers = supportTracks.slice(2 + extraFillersNeeded, 4 + extraFillersNeeded);
+-
+-  //       // if (
+-  //       //   openingBuffers.length !== 2 ||
+-  //       //   closingBuffers.length !== 2 ||
+-  //       //   gapFillers.length !== extraFillersNeeded
+-  //       // ) {
+-  //       //   throw new Error('Not enough eligible supporting tracks. Please try again.');
+-  //       // }
+-
+-  //       // 4. Reserve two opening and two closing buffers first.
+-  // if (supportTracks.length < 4) {
+-  //   throw new Error(
+-  //     'Not enough eligible tracks for the four opening and closing buffers.',
+-  //   );
+-  // }
+-
+-  // const openingBuffers = supportTracks.slice(0, 2);
+-  // const closingBuffers = supportTracks.slice(-2);
+-
+-  // // Everything left over can be used between focus-song placements.
+-  // const gapFillers = supportTracks.slice(2, -2);
+-
+-  //       // 5. Build the final sequence.
+-  //       const mainTracks: string[] = [];
+-
+-  //       for (let i = 0; i < focusSequence.length; i++) {
+-  //         mainTracks.push(focusSequence[i]);
+-
+-  //         if (i >= gapCount) continue;
+-
+-  //         const gapTracks = [...albumGaps[i]];
+-  //         const target = gapTargets[i];
+-
+-  //         while (gapTracks.length < target && gapFillers.length > 0) {
+-  //           gapTracks.push(gapFillers.shift()!);
+-  //         }
+-
+-  //         // Shuffle each gap independently for a less predictable arrangement.
+-  //         for (let j = gapTracks.length - 1; j > 0; j--) {
+-  //           const k = Math.floor(Math.random() * (j + 1));
+-  //           [gapTracks[j], gapTracks[k]] = [gapTracks[k], gapTracks[j]];
+-  //         }
+-
+-  //         mainTracks.push(...gapTracks.map((track) => track.name));
+-  //       }
+-
+-  //       // If there is no gap, keep any selected album tracks in the main section.
+-  //       if (gapCount === 0 && albumTracks.length > 0) {
+-  //         mainTracks.push(...albumTracks.map((track) => track.name));
+-  //       }
+-
+-  //       this.generatedPlaylistSequence = [
+-  //         ...openingBuffers.map((track) => track.name),
+-  //         ...mainTracks,
+-  //         ...closingBuffers.map((track) => track.name),
+-  //       ];
+-
+-  //       console.log(
+-  //         '[HEARTBEAT] Playlist generated:',
+-  //         this.generatedPlaylistSequence.length,
+-  //         'tracks',
+-  //       );
+-
+-  //       this.resetConfiguration();
+-  //     } catch (error) {
+-  //       this.spotifySearchError =
+-  //         error instanceof Error
+-  //           ? error.message
+-  //           : 'Something went wrong while generating your playlist.';
+-  //     } finally {
+-  //       this.isGenerating = false;
+-  //       this.cdr.markForCheck();
+-  //     }
+-  //   }
+-
+   async generatePlaylist(): Promise<void> {
+     if (this.isGenerating) return;
+ 
+@@ -912,6 +424,11 @@ export class PlaylistCreator implements OnInit {
+         for (const track of tracks) {
+           if (!track.id || seenAlbumTrackIds.has(track.id)) continue;
+ 
++          // Do not add a focus song again as an album track.
++          const trackKey = normalize(track.name);
++
++          if (focusCounts.has(trackKey)) continue;
++
+           seenAlbumTrackIds.add(track.id);
+           albumTracks.push(track);
+         }
+@@ -981,37 +498,232 @@ export class PlaylistCreator implements OnInit {
+       }
+ 
+       // Spread album tracks across different gaps instead of grouping them.
++      // const gapOrder = shuffle(Array.from({ length: gapCount }, (_, index) => index));
++
++      // for (const track of shuffle(albumTracks)) {
++      //   if (gapCount === 0) break;
++
++      //   const availableGap = gapOrder.find((index) => gaps[index].length < gapTargets[index]);
++
++      //   if (availableGap === undefined) {
++      //     throw new Error('Could not place every selected album track.');
++      //   }
++
++      //   gaps[availableGap].push(track);
++      // }
++
++      // Spread album tracks round-robin across available gaps.
++      // Fill one position in each gap before filling a second position.
+       const gapOrder = shuffle(Array.from({ length: gapCount }, (_, index) => index));
+ 
+-      for (const track of shuffle(albumTracks)) {
+-        if (gapCount === 0) break;
++      const remainingAlbumTracks = shuffle([...albumTracks]);
+ 
+-        const availableGap = gapOrder.find((index) => gaps[index].length < gapTargets[index]);
++      while (remainingAlbumTracks.length > 0) {
++        let placedThisRound = false;
+ 
+-        if (availableGap === undefined) {
+-          throw new Error('Could not place every selected album track.');
++        for (const gapIndex of gapOrder) {
++          if (remainingAlbumTracks.length === 0) break;
++
++          if (gaps[gapIndex].length >= gapTargets[gapIndex]) {
++            continue;
++          }
++
++          gaps[gapIndex].push(remainingAlbumTracks.shift()!);
++          placedThisRound = true;
+         }
+ 
+-        gaps[availableGap].push(track);
++        if (!placedThisRound) {
++          throw new Error('Could not distribute every selected album track across the playlist.');
++        }
+       }
+ 
+       // Fill remaining gap slots with BTS-related supporting tracks.
++      // const requiredFillers = gaps.reduce(
++      //   (total, gap, index) => total + gapTargets[index] - gap.length,
++      //   0,
++      // );
++
++      // if (requiredFillers > 0 && fillerPool.length === 0) {
++      //   throw new Error('Not enough supporting tracks to fill the playlist gaps.');
++      // }
++
++      // let fillerIndex = 0;
++
++      // for (let i = 0; i < gapCount; i++) {
++      //   while (gaps[i].length < gapTargets[i]) {
++      //     gaps[i].push(fillerPool[fillerIndex % fillerPool.length]);
++
++      //     fillerIndex++;
++      //   }
++
++      //   gaps[i] = shuffle(gaps[i]);
++      // }
++
++      // Fill remaining gap slots with unique BTS-related tracks.
++      // const requiredFillers = gaps.reduce(
++      //   (total, gap, index) => total + gapTargets[index] - gap.length,
++      //   0,
++      // );
++
++      // Exclude focus songs, album tracks, and reserved buffers.
++      const usedFillerIds = new Set<string>([
++        ...albumTracks.map((track) => track.id),
++        ...openingBuffers.map((track) => track.id),
++        ...closingBuffers.map((track) => track.id),
++      ]);
++
++      const usedFillerNames = new Set<string>([
++        ...focusCounts.keys(),
++        ...albumTracks.map((track) => normalize(track.name)),
++        ...openingBuffers.map((track) => normalize(track.name)),
++        ...closingBuffers.map((track) => normalize(track.name)),
++      ]);
++
++      const uniqueFillerPool = shuffle(
++        fillerPool.filter(
++          (track) => !usedFillerIds.has(track.id) && !usedFillerNames.has(normalize(track.name)),
++        ),
++      );
++
++      console.log('Filler pool breakdown:', {
++        supportTracks: supportTracks.length,
++        reservedBuffers: bufferIds.size,
++        fillerPool: fillerPool.length,
++        albumTracks: albumTracks.length,
++        uniqueFillerPool: uniqueFillerPool.length,
++        excludedFillerNames: [...usedFillerNames],
++        excludedFillerIds: [...usedFillerIds],
++      });
++      // When using the 2-filler exception, reserve two actual
++      // Spotify tracks that are each at least 4 minutes long.
++      // Select exactly two designated BTS fillers, each at least 4 minutes.
++      const selectedLongFillers: SpotifyTrack[] = [];
++
++      if (this.fillerCount === 2) {
++        const longFillers = shuffle(
++          uniqueFillerPool.filter((track) => track.duration_ms >= 4 * 60 * 1000),
++        );
++
++        if (longFillers.length < 2) {
++          throw new Error(
++            'Could not find two distinct BTS filler tracks that are each at least 4 minutes long. ' +
++              'Please generate again.',
++          );
++        }
++
++        selectedLongFillers.push(...longFillers.slice(0, 2));
++      }
++
++      /////////////////////////
++
++      // For a single focus song with no album, fit the gaps
++      // to the available unique fillers instead of requiring 3–4 each.
++
++      // For one focus song with no album, target exactly 45 playlist tracks.
++      // Four buffers are added separately, so calculate the required gap slots.
++      if (!hasTwoFocusSongs && albumTracks.length === 0 && gapCount > 0) {
++        const targetPlaylistLength = 45;
++        const bufferCount = openingBuffers.length + closingBuffers.length;
++
++        const requiredGapSlots =
++          targetPlaylistLength - bufferCount - focusSequence.length - albumTracks.length;
++
++        const minimumGapSlots = gapCount * 2;
++        const maximumGapSlots = gapCount * 3;
++
++        if (requiredGapSlots < minimumGapSlots || requiredGapSlots > maximumGapSlots) {
++          throw new Error(
++            `Cannot make a ${targetPlaylistLength}-track playlist while keeping ` +
++              `2–3 tracks between focus plays. Required gap slots: ${requiredGapSlots}.`,
++          );
++        }
++
++        if (uniqueFillerPool.length < requiredGapSlots) {
++          throw new Error(
++            `Need ${requiredGapSlots} unique supporting tracks to reach 45 tracks, ` +
++              `but only ${uniqueFillerPool.length} are available.`,
++          );
++        }
++
++        // Begin with two tracks in every gap.
++        gapTargets.fill(2);
++
++        // Add exactly enough third tracks to reach 45 total.
++        const extraSlots = requiredGapSlots - minimumGapSlots;
++        const shuffledGapIndexes = shuffle(Array.from({ length: gapCount }, (_, index) => index));
++
++        for (const index of shuffledGapIndexes.slice(0, extraSlots)) {
++          gapTargets[index] = 3;
++        }
++      }
++
++      // Calculate the filler requirement after adjusting gap sizes.
+       const requiredFillers = gaps.reduce(
+         (total, gap, index) => total + gapTargets[index] - gap.length,
+         0,
+       );
+ 
+-      if (requiredFillers > 0 && fillerPool.length === 0) {
+-        throw new Error('Not enough supporting tracks to fill the playlist gaps.');
++      console.log('Playlist slot calculation:', {
++        focusPlays: focusSequence.length,
++        albumTracks: albumTracks.length,
++        openingBuffers: openingBuffers.length,
++        closingBuffers: closingBuffers.length,
++        gapCount,
++        gapTargets,
++        albumTracksPlacedInGaps: gaps.reduce((total, gap) => total + gap.length, 0),
++        requiredFillers,
++        uniqueFillerPool: uniqueFillerPool.length,
++        selectedLongFillers: selectedLongFillers.length,
++      });
++
++      if (uniqueFillerPool.length < requiredFillers) {
++        throw new Error(
++          `Not enough unique BTS fillers. Need ${requiredFillers}, ` +
++            `but only ${uniqueFillerPool.length} eligible tracks are available. ` +
++            'Please generate again.',
++        );
+       }
+ 
+       let fillerIndex = 0;
+ 
++      // Insert the two designated long fillers into separate available gaps.
++      if (selectedLongFillers.length === 2) {
++        const availableGapIndexes = shuffle(
++          gaps
++            .map((gap, index) => ({ gap, index }))
++            .filter(({ gap, index }) => gap.length < gapTargets[index])
++            .map(({ index }) => index),
++        );
++
++        if (availableGapIndexes.length < 2) {
++          throw new Error('There are not enough separate gap slots for both designated fillers.');
++        }
++
++        for (let i = 0; i < 2; i++) {
++          const gapIndex = availableGapIndexes[i];
++          gaps[gapIndex].push(selectedLongFillers[i]);
++
++          usedFillerIds.add(selectedLongFillers[i].id);
++          usedFillerNames.add(normalize(selectedLongFillers[i].name));
++        }
++      }
++
++      // Fill all remaining slots without repeating filler tracks.
++      const selectedLongIds = new Set(selectedLongFillers.map((track) => track.id));
++
++      const remainingFillers = uniqueFillerPool.filter((track) => !selectedLongIds.has(track.id));
++
+       for (let i = 0; i < gapCount; i++) {
+         while (gaps[i].length < gapTargets[i]) {
+-          gaps[i].push(fillerPool[fillerIndex % fillerPool.length]);
++          const filler = remainingFillers[fillerIndex++];
+ 
+-          fillerIndex++;
++          if (!filler) {
++            throw new Error('Not enough unique BTS tracks to fill all playlist gaps.');
++          }
++
++          gaps[i].push(filler);
++          usedFillerIds.add(filler.id);
++          usedFillerNames.add(normalize(filler.name));
+         }
+ 
+         gaps[i] = shuffle(gaps[i]);
+@@ -1135,7 +847,11 @@ export class PlaylistCreator implements OnInit {
+         for (let i = 1; i < positions.length; i++) {
+           const interveningTracks = positions[i] - positions[i - 1] - 1;
+ 
+-          if (interveningTracks < 3 || interveningTracks > 4) {
++          const minGap = !hasTwoFocusSongs && albumTracks.length === 0 ? 2 : 3;
++
++          const maxGap = !hasTwoFocusSongs && albumTracks.length === 0 ? 3 : 4;
++
++          if (interveningTracks < minGap || interveningTracks > maxGap) {
+             throw new Error(
+               `Spacing check failed for "${finalSequence[positions[i]]}": ` +
+                 `${interveningTracks} tracks between plays. ` +
+@@ -1152,6 +868,17 @@ export class PlaylistCreator implements OnInit {
+       console.log('Generated playlist:', finalSequence);
+       console.log('Total tracks:', finalSequence.length);
+ 
++      console.log('FINAL PLAYLIST DEBUG:', {
++        focusPlays: focusSequence.length,
++        albumTracks: albumTracks.length,
++        openingBuffers: openingBuffers.length,
++        closingBuffers: closingBuffers.length,
++        mainTracks: mainTracks.length,
++        finalTracks: finalSequence.length,
++        gapTargets,
++        gapLengths: gaps.map((gap) => gap.length),
++      });
++
+       this.focusSong1 = '';
+       this.focusSong2 = '';
+       this.focusCount1 = 10;
+@@ -1171,6 +898,7 @@ export class PlaylistCreator implements OnInit {
+ 
+       this.hasAttemptedGeneration = false;
+     } catch (error) {
++      console.error('PLAYLIST GENERATION FAILED:', error);
+       this.spotifySearchError =
+         error instanceof Error ? error.message : 'Unable to generate the playlist.';
+     } finally {
+@@ -1299,8 +1027,16 @@ export class PlaylistCreator implements OnInit {
+       'artist:"Agust D"',
+     ];
+ 
++    // const results = await Promise.all(
++    //   queries.map((query) => this.spotifyService.searchTracks(query)),
++    // );
++
+     const results = await Promise.all(
+-      queries.map((query) => this.spotifyService.searchTracks(query)),
++      queries.flatMap((query) => [
++        this.spotifyService.searchTracks(query, 0),
++        this.spotifyService.searchTracks(query, 10),
++        this.spotifyService.searchTracks(query, 20),
++      ]),
+     );
+ 
+     const uniqueTracks = new Map<string, SpotifyTrack>();
+@@ -1340,6 +1076,13 @@ export class PlaylistCreator implements OnInit {
+ 
+     const candidates = [...uniqueTracks.values()];
+ 
++    console.log('Support track search results:', {
++      totalUniqueTracks: uniqueTracks.size,
++      excludedNames: [...excludedNames],
++      candidates: uniqueTracks.size,
++      trackNames: [...uniqueTracks.values()].map((track) => track.name),
++    });
++
+     // Shuffle the eligible tracks so each generation can vary.
+     for (let i = candidates.length - 1; i > 0; i--) {
+       const j = Math.floor(Math.random() * (i + 1));

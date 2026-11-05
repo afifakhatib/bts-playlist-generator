@@ -116,13 +116,75 @@ export class SpotifyService {
     sessionStorage.removeItem('heartbeat_oauth_state');
   }
 
-  async searchTracks(query: string): Promise<SpotifyTrack[]> {
+  // async searchTracks(query: string): Promise<SpotifyTrack[]> {
+  //   const token = this.getValidToken();
+  //   const cacheKey = query.trim().toLowerCase();
+
+  //   if (this.trackSearchCache.has(cacheKey)) {
+  //     return this.trackSearchCache.get(cacheKey)!;
+  //   }
+  //   if (!token) {
+  //     throw new Error('Connect to Spotify first.');
+  //   }
+
+  //   const params = new URLSearchParams({
+  //     q: query,
+  //     type: 'track',
+  //     limit: '10',
+  //   });
+
+  //   const response = await fetch(`https://api.spotify.com/v1/search?${params.toString()}`, {
+  //     headers: { Authorization: `Bearer ${token}` },
+  //   });
+
+  //   const data = await response.json();
+
+  //   if (!response.ok) {
+  //     throw new Error(data.error?.message || 'Spotify track search failed.');
+  //   }
+  //   const tracks = (data.tracks?.items ?? []) as SpotifyTrack[];
+  //   this.trackSearchCache.set(cacheKey, tracks);
+  //   return tracks;
+  // }
+
+  //   get album search function
+
+  // async getAlbumTracks(albumId: string, albumName: string): Promise<SpotifyTrack[]> {
+  //   const token = this.getValidToken();
+
+  //   if (!token) {
+  //     throw new Error('Connect to Spotify first.');
+  //   }
+
+  //   const response = await fetch(
+  //     `https://api.spotify.com/v1/albums/${encodeURIComponent(albumId)}/tracks?limit=50`,
+  //     {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     },
+  //   );
+
+  //   const data = await response.json();
+
+  //   if (!response.ok) {
+  //     throw new Error(data.error?.message || 'Could not load Spotify album tracks.');
+  //   }
+
+  //   return (data.items ?? []).map((track: any) => ({
+  //     ...track,
+  //     album: { name: albumName },
+  //   })) as SpotifyTrack[];
+  // }
+
+  async searchTracks(query: string, offset = 0): Promise<SpotifyTrack[]> {
     const token = this.getValidToken();
-    const cacheKey = query.trim().toLowerCase();
+    const cacheKey = `${query.trim().toLowerCase()}|${offset}`;
 
     if (this.trackSearchCache.has(cacheKey)) {
       return this.trackSearchCache.get(cacheKey)!;
     }
+
     if (!token) {
       throw new Error('Connect to Spotify first.');
     }
@@ -131,6 +193,7 @@ export class SpotifyService {
       q: query,
       type: 'track',
       limit: '10',
+      offset: String(offset),
     });
 
     const response = await fetch(`https://api.spotify.com/v1/search?${params.toString()}`, {
@@ -142,12 +205,12 @@ export class SpotifyService {
     if (!response.ok) {
       throw new Error(data.error?.message || 'Spotify track search failed.');
     }
+
     const tracks = (data.tracks?.items ?? []) as SpotifyTrack[];
     this.trackSearchCache.set(cacheKey, tracks);
+
     return tracks;
   }
-
-  //   get album search function
 
   async getAlbumTracks(albumId: string, albumName: string): Promise<SpotifyTrack[]> {
     const token = this.getValidToken();
@@ -173,7 +236,10 @@ export class SpotifyService {
 
     return (data.items ?? []).map((track: any) => ({
       ...track,
-      album: { name: albumName },
+      album: {
+        name: albumName,
+        images: [],
+      },
     })) as SpotifyTrack[];
   }
 
