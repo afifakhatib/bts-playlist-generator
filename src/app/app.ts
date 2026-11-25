@@ -1,18 +1,28 @@
-import { Component, EventEmitter, Output, signal } from '@angular/core';
+import { Component, Input, signal } from '@angular/core';
 import { Home } from './home/home';
 import { PlaylistCreator } from './playlist-creator/playlist-creator';
+import { SpotifyPlaylistSetup } from './spotify-playlist-setup/spotify-playlist-setup';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [Home, PlaylistCreator, RouterOutlet],
+  imports: [Home, PlaylistCreator, SpotifyPlaylistSetup, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
   protected readonly title = signal('bts-playlist-generator');
 
+
   showPlaylistCreator = false;
+  showSpotifyPlaylistSetup = false;
+
+  generatedTracks: string[] = [];
+  handlePlaylistGenerated(tracks: string[]): void {
+    this.generatedTracks = tracks;
+    this.showSpotifyPlaylistSetup = true;
+  }
+
   startCreating(): void {
     this.showPlaylistCreator = true;
     console.log('Create Playlist clicked!');

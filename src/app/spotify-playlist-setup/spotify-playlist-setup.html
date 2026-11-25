@@ -1,0 +1,186 @@
+<section class="playlist-setup">
+  <div class="setup-header">
+    <p class="eyebrow">HEARTBEAT EXPERIENCE</p>
+    <h1>Set up your Spotify playlist 💜</h1>
+    <p>Give your playlist its own identity before creating it.</p>
+  </div>
+
+  <div class="setup-content">
+    <!-- PLAYLIST DETAILS -->
+    <div class="playlist-details">
+      <h2>Playlist details</h2>
+
+      <label for="playlistTitle">Playlist title</label>
+      <input
+        id="playlistTitle"
+        type="text"
+        [(ngModel)]="playlistTitle"
+        placeholder="Enter playlist title"
+      />
+
+      <label for="playlistDescription">Description</label>
+      <textarea
+        id="playlistDescription"
+        [(ngModel)]="playlistDescription"
+        placeholder="Write something about your playlist..."
+        rows="4"
+      ></textarea>
+
+      <p class="track-count">
+       {{ tracks.length }} {{ tracks.length === 1 ? 'track' : 'tracks' }} in your generated playlist
+      </p>
+
+      <!-- GENERATED PLAYLIST PREVIEW -->
+
+      <div class="rules-card preview-dropdown">
+        <details open>
+          <summary>
+            <div class="preview-summary">
+              <strong>Generated Playlist Preview</strong>
+              <small> {{ tracks.length }} tracks · Your playlist is ready for review </small>
+            </div>
+
+            <span class="preview-chevron">⌄</span>
+          </summary>
+
+          <div class="preview-content">
+            @if (tracks.length > 0) {
+              <ol>
+                @for (track of tracks; track $index) {
+                  <li>{{ track }}</li>
+                }
+              </ol>
+            } @else {
+              <p>No generated tracks found. Please return to Playlist Creator.</p>
+            }
+          </div>
+        </details>
+      </div>
+
+      <!-- CONTINUE TO FINAL REVIEW -->
+
+      <!-- <div class="setup-actions">
+        <button
+          type="button"
+          class="continue-btn"
+          [disabled]="tracks.length === 0 || !playlistTitle.trim()"
+        >
+          GENERATE HEARTBEAT PLAYLIST 🎵
+        </button>
+      </div> -->
+
+      <div class="setup-actions">
+        @if (!spotifyConnected) {
+          <p class="spotify-status">Connect your Spotify account before creating your playlist.</p>
+        }
+
+        <button
+          type="button"
+          class="continue-btn"
+          (click)="createSpotifyPlaylist()"
+          [disabled]="
+            tracks.length === 0 ||
+            !playlistTitle.trim() ||
+            !spotifyConnected ||
+            isCreatingSpotifyPlaylist ||
+            !!createdSpotifyPlaylist
+          "
+        >
+          @if (isCreatingSpotifyPlaylist) {
+            Creating your HEARTBEAT playlist...
+          } @else {
+            GENERATE HEARTBEAT PLAYLIST 💜
+          }
+        </button>
+
+        @if (spotifyPlaylistError) {
+          <p class="spotify-error">{{ spotifyPlaylistError }}</p>
+        }
+
+        @if (createdSpotifyPlaylist) {
+          <div class="spotify-success">
+            <h3>🎉 Your HEARTBEAT playlist is ready!</h3>
+            <p>{{ createdSpotifyPlaylist.name }}</p>
+
+            <a
+              [href]="createdSpotifyPlaylist.external_urls.spotify"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open playlist on Spotify ↗
+            </a>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- COVER SELECTION -->
+    <div class="cover-section">
+      <h2>Choose your playlist cover</h2>
+
+      <div class="cover-options">
+        <button
+          type="button"
+          [class.active]="selectedCoverOption === 'upload'"
+          (click)="selectedCoverOption = 'upload'"
+        >
+          Upload your own picture
+        </button>
+
+        <button
+          type="button"
+          [class.active]="selectedCoverOption === 'generated'"
+          (click)="selectedCoverOption = 'generated'"
+        >
+          Create HEARTBEAT cover
+        </button>
+      </div>
+
+      <!-- UPLOAD COVER -->
+      @if (selectedCoverOption === 'upload') {
+        <div class="upload-section">
+          <label for="coverUpload">Choose an image</label>
+
+          <input id="coverUpload" type="file" accept="image/*" (change)="onCoverSelected($event)" />
+
+          @if (coverPreviewUrl) {
+            <div class="cover-art uploaded-cover">
+              <img [src]="coverPreviewUrl" alt="Uploaded playlist cover" />
+
+              <div class="cover-title">
+                {{ playlistTitle || 'HEARTBEAT' }}
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- GENERATED COVER -->
+      @if (selectedCoverOption === 'generated') {
+        <div class="theme-section">
+          <label for="coverTheme">Select a theme</label>
+
+          <select id="coverTheme" [(ngModel)]="selectedTheme">
+            @for (theme of themes; track theme.value) {
+              <option [value]="theme.value">
+                {{ theme.name }}
+              </option>
+            }
+          </select>
+
+          <div class="cover-art" [class]="selectedTheme">
+            <div class="cover-decoration">♡</div>
+
+            <div class="cover-title">
+              {{ playlistTitle || 'HEARTBEAT' }}
+            </div>
+
+            <!-- <div class="cover-subtitle">
+              A HEARTBEAT PLAYLIST
+            </div> -->
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

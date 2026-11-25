@@ -72,7 +72,7 @@ export class SpotifyService {
       code_challenge_method: 'S256',
       code_challenge: challenge,
       state,
-      scope: 'playlist-modify-private',
+      scope: 'playlist-modify-private ugc-image-upload',
     });
 
     window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
@@ -356,6 +356,37 @@ export class SpotifyService {
           data.error?.message || 'The playlist was created, but some tracks could not be added.',
         );
       }
+    }
+  }
+
+  async uploadPlaylistCover(playlistId: string, imageBase64: string): Promise<void> {
+    const token = this.getValidToken();
+
+    if (!token) {
+      throw new Error('Connect to Spotify again before uploading the cover.');
+    }
+
+    const response = await fetch(
+      `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/images`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'image/jpeg',
+        },
+        body: imageBase64,
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+
+      console.error('Spotify cover upload failed:', {
+        status: response.status,
+        response: errorText,
+      });
+
+      throw new Error(`Spotify could not upload the cover (${response.status}).`);
     }
   }
 
