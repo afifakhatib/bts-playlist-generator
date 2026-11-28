@@ -1,3 +1,20 @@
+<!-- HEARTBEAT MUSIC PLAYER -->
+<!-- <section class="music-player">
+      <div class="music-info">
+        <span class="music-icon">♫</span>
+        <div>
+          <h3>BTS — Heartbeat</h3>
+          <p>BTS WORLD Original Soundtrack</p>
+        </div>
+      </div>
+
+      <audio #heartbeatAudio src="/music/heartbeat.mp3" (ended)="isPlaying = false"></audio>
+
+      <button type="button" class="music-toggle" (click)="toggleMusic(heartbeatAudio)">
+        {{ isPlaying ? 'Ⅱ' : '▶' }}
+      </button>
+    </section> -->
+
 <!-- @if(showPlaylistCreator){
   <app-playlist-creator></app-playlist-creator>
 } @else {
@@ -7,6 +24,42 @@
 
 <router-outlet></router-outlet> -->
 
+<!-- @if (showSpotifyPlaylistSetup) {
+  <app-spotify-playlist-setup [tracks]="generatedTracks"></app-spotify-playlist-setup>
+} @else if (showPlaylistCreator) {
+  <app-playlist-creator
+    (playlistGenerated)="handlePlaylistGenerated($event)"
+  ></app-playlist-creator>
+} @else {
+  <app-home (createPlaylist)="startCreating()"></app-home>
+}
+
+<router-outlet></router-outlet> -->
+
+<!-- Background Music Player -->
+<section class="global-music-player">
+  <div class="music-info">
+    <span class="music-icon">♫</span>
+    <div>
+      <h3>BTS — Heartbeat</h3>
+      <p>BTS WORLD Original Soundtrack</p>
+    </div>
+  </div>
+
+  <audio
+    #heartbeatAudio
+    src="/music/heartbeat.mp3"
+    (play)="isPlaying = true"
+    (pause)="isPlaying = false"
+    (ended)="isPlaying = false"
+  ></audio>
+
+  <button type="button" class="music-toggle" (click)="toggleMusic(heartbeatAudio)">
+    {{ isPlaying ? '⏸' : '▶' }}
+  </button>
+</section>
+
+<!-- Existing screen navigation -->
 @if (showSpotifyPlaylistSetup) {
   <app-spotify-playlist-setup [tracks]="generatedTracks"></app-spotify-playlist-setup>
 } @else if (showPlaylistCreator) {

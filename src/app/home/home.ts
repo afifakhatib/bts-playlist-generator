@@ -7,17 +7,18 @@ import { Component, EventEmitter, Output } from '@angular/core';
   styleUrl: './home.scss',
 })
 export class Home {
-@Output() createPlaylist = new EventEmitter<void>();
+  @Output() createPlaylist = new EventEmitter<void>();
   // showCreator = false;
-  
 
   // startCreating(){
   //   this.showCreator = true;
   //   console.log('Starting to create playlist...');
 
-
   //   // goHome(){
   //   //   this.showCreator = false;
   //   // }
   // }
+
+  
+
 }

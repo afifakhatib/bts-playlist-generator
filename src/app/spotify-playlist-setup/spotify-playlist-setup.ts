@@ -157,15 +157,64 @@ export class SpotifyPlaylistSetup implements OnInit {
     }
   }
 
+  // private async prepareUploadedCover(file: File): Promise<string> {
+  //   const image = await createImageBitmap(file);
+
+  //   const maxDimension = 640;
+  //   const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+
+  //   const canvas = document.createElement('canvas');
+  //   canvas.width = Math.round(image.width * scale);
+  //   canvas.height = Math.round(image.height * scale);
+
+  //   const context = canvas.getContext('2d');
+
+  //   if (!context) {
+  //     image.close();
+  //     throw new Error('Could not prepare your cover image.');
+  //   }
+
+  //   context.fillStyle = '#ffffff';
+  //   context.fillRect(0, 0, canvas.width, canvas.height);
+  //   context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  //   image.close();
+
+  //   let blob: Blob | null = null;
+
+  //   for (let quality = 0.9; quality >= 0.3; quality -= 0.1) {
+  //     blob = await new Promise<Blob | null>((resolve) =>
+  //       canvas.toBlob(resolve, 'image/jpeg', quality),
+  //     );
+
+  //     if (blob && blob.size <= 256 * 1024) {
+  //       break;
+  //     }
+  //   }
+
+  //   if (!blob || blob.size > 256 * 1024) {
+  //     throw new Error('Your cover image could not be compressed below 256 KB.');
+  //   }
+
+  //   return await new Promise<string>((resolve, reject) => {
+  //     const reader = new FileReader();
+
+  //     reader.onload = () => {
+  //       const result = reader.result as string;
+  //       resolve(result.split(',')[1]);
+  //     };
+
+  //     reader.onerror = () => reject(new Error('Could not read your cover image.'));
+
+  //     reader.readAsDataURL(blob);
+  //   });
+  // }
+
   private async prepareUploadedCover(file: File): Promise<string> {
     const image = await createImageBitmap(file);
 
-    const maxDimension = 640;
-    const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
-
     const canvas = document.createElement('canvas');
-    canvas.width = Math.round(image.width * scale);
-    canvas.height = Math.round(image.height * scale);
+    canvas.width = 640;
+    canvas.height = 640;
 
     const context = canvas.getContext('2d');
 
@@ -174,11 +223,87 @@ export class SpotifyPlaylistSetup implements OnInit {
       throw new Error('Could not prepare your cover image.');
     }
 
-    context.fillStyle = '#ffffff';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    // Crop the image to a square, keeping its centre.
+    const scale = Math.max(640 / image.width, 640 / image.height);
+
+    const width = image.width * scale;
+    const height = image.height * scale;
+
+    const x = (640 - width) / 2;
+    const y = (640 - height) / 2;
+
+    context.drawImage(image, x, y, width, height);
     image.close();
 
+    // Subtle dark overlay to keep the title readable.
+    const overlay = context.createLinearGradient(0, 0, 0, 640);
+    overlay.addColorStop(0, 'rgba(0, 0, 0, 0.08)');
+    overlay.addColorStop(0.5, 'rgba(0, 0, 0, 0.28)');
+    overlay.addColorStop(1, 'rgba(0, 0, 0, 0.08)');
+
+    context.fillStyle = overlay;
+    context.fillRect(0, 0, 640, 640);
+
+    // Playlist title.
+    const title = this.playlistTitle.trim() || 'HEARTBEAT';
+
+    let fontSize = 44;
+    let lines: string[] = [];
+
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+
+    // Wrap the title into readable lines.
+    const wrapTitle = (font: string): string[] => {
+      context.font = font;
+
+      const result: string[] = [];
+      let currentLine = '';
+
+      for (const word of title.split(/\s+/)) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+
+        if (context.measureText(testLine).width > 520 && currentLine) {
+          result.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+
+      if (currentLine) {
+        result.push(currentLine);
+      }
+
+      return result;
+    };
+
+    lines = wrapTitle(`bold ${fontSize}px Arial`);
+
+    // Reduce font size if the title needs several lines.
+    while (lines.length > 3 && fontSize > 28) {
+      fontSize -= 2;
+      lines = wrapTitle(`bold ${fontSize}px Arial`);
+    }
+
+    context.font = `bold ${fontSize}px Arial`;
+    context.fillStyle = '#ffffff';
+    context.shadowColor = 'rgba(0, 0, 0, 0.65)';
+    context.shadowBlur = 12;
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = 3;
+
+    const lineHeight = fontSize * 1.25;
+    const startY = 320 - ((lines.length - 1) * lineHeight) / 2;
+
+    lines.forEach((line, index) => {
+      context.fillText(line, 320, startY + index * lineHeight, 540);
+    });
+
+    context.shadowColor = 'transparent';
+    context.shadowBlur = 0;
+
+    // Compress to Spotify's image-size limit.
     let blob: Blob | null = null;
 
     for (let quality = 0.9; quality >= 0.3; quality -= 0.1) {
@@ -203,7 +328,7 @@ export class SpotifyPlaylistSetup implements OnInit {
         resolve(result.split(',')[1]);
       };
 
-      reader.onerror = () => reject(new Error('Could not read your cover image.'));
+      reader.onerror = () => reject(new Error('Could not prepare your cover image.'));
 
       reader.readAsDataURL(blob);
     });
